@@ -40,7 +40,7 @@ const Navbar = () => {
             Home
           </Typography>
           {isAuthenticated ? (
-            <Button color="inherit" onClick={handleLogout}>
+            <Button color="secondary" variant='contained' onClick={handleLogout}>
               Logout
             </Button>
           ) : (

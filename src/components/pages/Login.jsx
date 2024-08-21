@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { Avatar, Box, FormControlLabel, Grid, Paper, TextField, Typography, Checkbox, Button, Link } from "@mui/material";
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
@@ -8,85 +8,77 @@ import * as Yup from "yup";
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../slices/authSlice';
 import { GoogleLogin } from '@react-oauth/google';
-import { useState } from "react";
 
 const Login = () => {
-  const navigate = useNavigate(); // Hook for navigation
-  const dispatch = useDispatch(); // Hook for Redux actions
-  const [checkedB, setChecked] = useState(false); // State for 'Remember Me' checkbox
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [checkedB, setChecked] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Handler for checkbox state change
   const handleChange = (event) => {
     setChecked(event.target.checked);
   };
 
-  // Style objects for the Paper component and Avatar
   const paperStyle = { padding: 20, height: '70vh', width: 400, margin: "20px auto" };
   const avtarStyle = { backgroundColor: 'green' };
 
-  // Schema Validation of Form using Yup
   const schema = Yup.object({
-    email: Yup.string().email("Please Enter a valid email").required("Email is required"),
-    password: Yup.string().min(7, "Password length should be greater than 7").required("Password is Required")
+    email: Yup.string().email("Please enter a valid email").required("Email is required"),
+    password: Yup.string().min(7, "Password length should be greater than 7").required("Password is required")
   });
 
-  // Formik settings for handling form submission and validation
   const formik = useFormik({
     initialValues: {
       email: "",
       password: "",
     },
-    onSubmit: async (values, helpers) => {
+    onSubmit: async (values) => {
       try {
-        // Make a request to the backend for login
-        const response = await axios.post('http://localhost:5000/login', values);
+        const response = await axios.post('http://localhost:5000/api/auth/login', values);
 
-        // Check if the response contains the expected data
         if (response.status === 200 && response.data && response.data.token) {
-          // Dispatch loginSuccess action to update the Redux store
           dispatch(loginSuccess({ token: response.data.token, user: response.data.user }));
-          // Store the token in localStorage
           localStorage.setItem('authToken', response.data.token);
-          // Redirect to the dashboard
           navigate('/dashboard');
         } else {
-          helpers.setErrors({ submit: 'Unexpected response from server' });
+          setErrorMessage('Unexpected response from server');
         }
-        
       } catch (error) {
-        // Handle errors from the backend
-        if (error.response && error.response.status === 400) {
-          helpers.setErrors({ submit: 'Invalid email or password' });
+        if (error.response && error.response.data && error.response.data.error) {
+          setErrorMessage(error.response.data.error);
         } else {
-          helpers.setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+          setErrorMessage('An unexpected error occurred. Please try again.');
         }
-        console.log(error.message);
+        console.error('Login error:', error.response ? error.response.data : error.message);
       }
     },
     validationSchema: schema,
   });
 
-  // Handle Google login success
   const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
-      const response = await axios.post('http://localhost:5000/google-login', { token: credentialResponse.credential });
+      const response = await axios.post('http://localhost:5000/api/auth/google-login', { token: credentialResponse.credential });
 
       if (response.status === 200 && response.data && response.data.token) {
         dispatch(loginSuccess({ token: response.data.token, user: response.data.user }));
         localStorage.setItem('authToken', response.data.token);
         navigate('/dashboard');
       } else {
-        console.log('Unexpected response from server');
+        console.error('Unexpected response from server');
       }
-
     } catch (error) {
-      console.log('Google login failed', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+      console.error('Google login failed:', error);
     }
   };
 
   return (
     <Grid>
-      <Paper elevation={10} style={paperStyle} sx={{ borderColor: "blue" }}>
+      <Paper elevation={10} style={paperStyle}>
         <Grid align="center">
           <Avatar style={avtarStyle}>
             <LockOutlinedIcon />
@@ -101,7 +93,6 @@ const Login = () => {
             Please Login
           </Typography>
         </Grid>
-        {/* Form for email and password */}
         <form onSubmit={formik.handleSubmit}>
           <TextField
             label="E-mail"
@@ -131,7 +122,6 @@ const Login = () => {
             onChange={formik.handleChange}
             value={formik.values.password}
           />
-
           <Box>
             <FormControlLabel 
               label="Remember Me"
@@ -144,6 +134,11 @@ const Login = () => {
             </Button>
           </Box>
         </form>
+        {errorMessage && (
+          <Box sx={{ mt: 2, color: 'red', textAlign: 'center' }}>
+            <Typography>{errorMessage}</Typography>
+          </Box>
+        )}
         <Box alignItems={"center"} justifyContent={"center"} sx={{ mt: 2, textAlign: "center" }}>
           <Typography>
             <Link href="#" onClick={(e) => e.preventDefault()} >Forgot Password? </Link>
@@ -155,12 +150,13 @@ const Login = () => {
             <Link href="#" onClick={() => navigate('/signup')} >Sign up</Link>
           </Typography>
         </Box>
-
-        {/* Google Login Button */}
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <GoogleLogin 
             onSuccess={handleGoogleLoginSuccess}
-            onError={(error) => console.log('Google login failed', error)}
+            onError={(error) => {
+              console.error('Google login failed', error);
+              setErrorMessage('An unexpected error occurred. Please try again.');
+            }}
           />
         </Box>
       </Paper>

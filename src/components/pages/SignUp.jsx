@@ -9,6 +9,8 @@ import * as Yup from "yup";
 const SignUp = () => {
   const navigate = useNavigate();
   const [checkedB, setChecked] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleChange = (event) => {
     setChecked(event.target.checked);
   };
@@ -33,7 +35,7 @@ const SignUp = () => {
     onSubmit: async (values, helpers) => {
       try {
         // Make a request to the backend for signup
-        const response = await axios.post('http://localhost:5000/signup', values);
+        const response = await axios.post('http://localhost:5000/api/auth/signup', values);
 
         // Check if the response has the expected data (e.g., a success message or token)
         if (response.status === 200 && response.data && response.data.token) {
@@ -44,19 +46,19 @@ const SignUp = () => {
           navigate('/login');
         } else {
           // If the response doesn't have the expected data, set an error
-          helpers.setErrors({ submit: 'Unexpected response from server' });
+          setErrorMessage('Unexpected response from server');
         }
-        
+      
       } catch (error) {
-        // If there's an error (e.g., user already exists), display it
-        if (error.response && error.response.status === 400) {
-          // Backend validation failed (e.g., user already exists)
-          helpers.setErrors({ submit: 'An error occurred during signup. Please try again.' });
+        // If there's an error, display the message from the response
+        if (error.response && error.response.data && error.response.data.message) {
+          // Set error message from backend response
+          setErrorMessage(error.response.data.message);
         } else {
           // Some other error occurred (e.g., network error)
-          helpers.setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+          setErrorMessage('An unexpected error occurred. Please try again.');
         }
-        console.log(error.message);
+        console.error('Signup error:', error.response ? error.response.data : error.message);
       }
     },
     validationSchema: schema,
@@ -139,6 +141,12 @@ const SignUp = () => {
           </Box>
         </form>
         
+        {errorMessage && (
+          <Box sx={{ mt: 2, color: 'red', textAlign: 'center' }}>
+            <Typography>{errorMessage}</Typography>
+          </Box>
+        )}
+
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Typography>
             Already have an account? {" "}
@@ -147,7 +155,7 @@ const SignUp = () => {
         </Box>
       </Paper>
     </Grid>
-  )
+  );
 }
 
 export default SignUp;
