@@ -22,8 +22,15 @@ connectDB();
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 app.use(express.json()); // Parse JSON bodies
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Voosh Task Backend!');
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
+
+// Error handling middleware
 app.use(errorHandler); // Custom error handler
 
 // Start the server
