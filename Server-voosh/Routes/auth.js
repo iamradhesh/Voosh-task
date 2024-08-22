@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../Models/User'); // Adjust the path based on your project structure
+const User = require('../Models/User');
 
 // Signup route
 router.post('/signup', async (req, res) => {
@@ -73,8 +73,8 @@ router.post('/google-login', async (req, res) => {
   const { token } = req.body;
 
   try {
-    // Validate the token (this is a placeholder; in practice, you would verify with Google's API)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify the token with Google's API
+    const decoded = await verifyGoogleToken(token); // Implement this function
 
     let user = await User.findOne({ googleId: decoded.sub });
 
