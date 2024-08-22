@@ -18,55 +18,48 @@ const SignUp = () => {
   const paperStyle = { padding: 20, height: '70vh', width: 400, margin: "20px auto" };
   const avtarStyle = { backgroundColor: 'green' };
 
-  // Schema Validation of Form using Yup:-
   const schema = Yup.object({
     name: Yup.string().required("Name is required").trim(),
     email: Yup.string().email("Please enter a valid email").required("Email is required"),
-    password: Yup.string().min(7, "Password length should be greater than 7").required("Password is required")
+    password: Yup.string().min(7, "Password length should be greater than 7").required("Password is required"),
+    terms: Yup.boolean().oneOf([true], "You must accept the terms and conditions").required()
   });
 
-  // Formik Settings:-
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const formik = useFormik({
     initialValues: {
       name: "",
       email: "",
       password: "",
+      terms: false
     },
-    onSubmit: async (values, helpers) => {
+    onSubmit: async (values) => {
+      console.log('Form submitted with values:', values); // Debugging line
       try {
-        // Make a request to the backend for signup
-        const response = await axios.post('http://localhost:5000/api/auth/signup', values);
-
-        // Check if the response has the expected data (e.g., a success message or token)
-        if (response.status === 200 && response.data && response.data.token) {
-          // Store the token if necessary (e.g., in localStorage)
+        const response = await axios.post(`${apiUrl}/auth/signup`, values);
+        console.log('API Response:', response); // Log the entire response
+  
+        if (response.status === 201 && response.data && response.data.token) {
           localStorage.setItem('authToken', response.data.token);
-
-          // Redirect to the login page or dashboard
+          console.log('Navigating to login'); // Debugging line
           navigate('/login');
         } else {
-          // If the response doesn't have the expected data, set an error
           setErrorMessage('Unexpected response from server');
         }
-      
+        
       } catch (error) {
-        // If there's an error, display the message from the response
-        if (error.response && error.response.data && error.response.data.message) {
-          // Set error message from backend response
-          setErrorMessage(error.response.data.message);
-        } else {
-          // Some other error occurred (e.g., network error)
-          setErrorMessage('An unexpected error occurred. Please try again.');
-        }
         console.error('Signup error:', error.response ? error.response.data : error.message);
+        setErrorMessage(error.response?.data?.message || 'An unexpected error occurred. Please try again.');
       }
     },
     validationSchema: schema,
   });
+  
 
   return (
     <Grid>
-      <Paper elevation={10} style={paperStyle} sx={{ borderColor: "blue" }}>
+      <Paper elevation={10} style={paperStyle}>
         <Grid align="center">
           <Avatar style={avtarStyle}>
             <LockOutlinedIcon />
@@ -81,7 +74,6 @@ const SignUp = () => {
             Sign up
           </Typography>
         </Grid>
-        {/* Name */}
         <form onSubmit={formik.handleSubmit}>
           <TextField
             label="Name"
@@ -96,8 +88,8 @@ const SignUp = () => {
             helperText={formik.errors.name}
             onChange={formik.handleChange}
             value={formik.values.name}
+            autoComplete="off"
           />
-          {/* Email */}
           <TextField
             label="E-Mail"
             placeholder="Enter your Email Id"
@@ -111,8 +103,8 @@ const SignUp = () => {
             helperText={formik.errors.email}
             onChange={formik.handleChange}
             value={formik.values.email}
+            autoComplete="off"
           />
-          {/* Password */}
           <TextField
             label="Password"
             placeholder="Enter your Password"
@@ -126,27 +118,27 @@ const SignUp = () => {
             helperText={formik.errors.password}
             onChange={formik.handleChange}
             value={formik.values.password}
+            autoComplete="off"
           />
-
-          <Box>
-            <FormControlLabel 
-              label="I agree to Voosh's Terms & Conditions"
-              control={<Checkbox checked={checkedB} onChange={handleChange} />}
-            />
-          </Box>
+          <FormControlLabel 
+            control={<Checkbox checked={formik.values.terms} onChange={formik.handleChange} name="terms" />}
+            label="I agree to Voosh's Terms & Conditions"
+            sx={{ mt: 2 }}
+          />
+          {formik.errors.terms && (
+            <Typography color="red" variant="body2">{formik.errors.terms}</Typography>
+          )}
           <Box>
             <Button type="submit" color="primary" variant="contained" fullWidth>
               Sign up
             </Button>
           </Box>
         </form>
-        
         {errorMessage && (
           <Box sx={{ mt: 2, color: 'red', textAlign: 'center' }}>
             <Typography>{errorMessage}</Typography>
           </Box>
         )}
-
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Typography>
             Already have an account? {" "}

@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
+// Import routes and middleware
 const authRoutes = require('./Routes/auth'); // Adjust the path if necessary
 const connectDB = require('./Config/db'); // Adjust the path if necessary
 const errorHandler = require('./Middleware/errorHandlingMiddleware');
@@ -10,6 +11,7 @@ const errorHandler = require('./Middleware/errorHandlingMiddleware');
 // Load environment variables
 dotenv.config();
 
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -17,12 +19,12 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 // Middleware
-app.use(cors());
-app.use(express.json()); // For parsing application/json
+app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(express.json()); // Parse JSON bodies
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use(errorHandler);
+app.use(errorHandler); // Custom error handler
 
 // Start the server
 app.listen(PORT, () => {

@@ -27,6 +27,8 @@ const Login = () => {
     password: Yup.string().min(7, "Password length should be greater than 7").required("Password is required")
   });
 
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -34,7 +36,7 @@ const Login = () => {
     },
     onSubmit: async (values) => {
       try {
-        const response = await axios.post('http://localhost:5000/api/auth/login', values);
+        const response = await axios.post(`${apiUrl}/auth/login`, values);
 
         if (response.status === 200 && response.data && response.data.token) {
           dispatch(loginSuccess({ token: response.data.token, user: response.data.user }));
@@ -57,7 +59,7 @@ const Login = () => {
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/google-login', { token: credentialResponse.credential });
+      const response = await axios.post(`${apiUrl}/auth/google-login`, { token: credentialResponse.credential });
 
       if (response.status === 200 && response.data && response.data.token) {
         dispatch(loginSuccess({ token: response.data.token, user: response.data.user }));
